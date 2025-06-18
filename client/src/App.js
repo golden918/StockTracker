@@ -1,4 +1,7 @@
 import React, { useState } from "react";
+import Header from "./components/Header";
+import Sidebar from "./components/Sidebar";
+import "./App.css"; 
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
@@ -6,7 +9,10 @@ import {
 function App() {
   const [input, setInput] = useState("");
   const [trackedStocks, setTrackedStocks] = useState([]);
-  const [stockDataMap, setStockDataMap] = useState({}); // { AAPL: [ { date, price } ] }
+  const [stockDataMap, setStockDataMap] = useState({});
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
   const addStock = async () => {
     const symbol = input.toUpperCase();
@@ -54,43 +60,41 @@ function App() {
   })();
 
   return (
-    <div className="App" style={{ padding: "2rem", fontFamily: "sans-serif" }}>
-      <h1>📊 Stock Tracker</h1>
-
-      <input
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        placeholder="Enter Ticker (e.g., AAPL)"
-      />
-      <button onClick={addStock}>Add Stock</button>
-
-      <ul>
-        {trackedStocks.map(s => (
-          <li key={s}>
-            {s} <button onClick={() => removeStock(s)}>Remove</button>
-          </li>
-        ))}
-      </ul>
-
-      {mergedData.length > 0 && (
-        <ResponsiveContainer width="100%" height={400}>
-          <LineChart data={mergedData}>
-            <XAxis dataKey="date" />
-            <YAxis />
-            <Tooltip />
-            <Legend />
-            {trackedStocks.map(symbol => (
-              <Line
-                key={symbol}
-                type="monotone"
-                dataKey={symbol}
-                stroke={`#${Math.floor(Math.random()*16777215).toString(16)}`}
-                dot={false}
-              />
-            ))}
-          </LineChart>
-        </ResponsiveContainer>
-      )}
+    <div className="App">
+      <Header onToggleSidebar={toggleSidebar} />
+      <Sidebar isOpen={sidebarOpen} />
+      <main className="content">
+        <div className="input-group">
+          <input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Enter Ticker (e.g., AAPL)" />
+          <button onClick={addStock}>Add Stock</button>
+        </div>
+        <ul>
+          {trackedStocks.map(s => (
+            <li key={s}>
+              {s} <button onClick={() => removeStock(s)}>Remove</button>
+            </li>
+          ))}
+        </ul>
+        {mergedData.length > 0 && (
+          <ResponsiveContainer width="100%" height={400}>
+            <LineChart data={mergedData}>
+              <XAxis dataKey="date" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              {trackedStocks.map(symbol => (
+                <Line
+                  key={symbol}
+                  type="monotone"
+                  dataKey={symbol}
+                  stroke={`#${Math.floor(Math.random()*16777215).toString(16)}`}
+                  dot={false}
+                />
+              ))}
+            </LineChart>
+          </ResponsiveContainer>
+        )}
+      </main>
     </div>
   );
 }
