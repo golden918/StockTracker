@@ -103,3 +103,14 @@ li button:hover {
   align-items: center;
   margin-bottom: 1rem;
 }
+
+.dashboard-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  background-color: #e6eef5;
+  padding: 1rem;
+  border-radius: 8px;
+  min-height: 120px;
+  margin-bottom: 2rem;
+}

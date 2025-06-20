@@ -1,22 +1,34 @@
 import React, { useState } from "react";
 import Header from "./components/Header";
 import Sidebar from "./components/Sidebar";
-import "./App.css"; 
+import StockCapsule from "./components/StockCapsule";
+import "./App.css";
 import {
-  LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer,
-} from "recharts";
+  DragDropContext,
+  Droppable,
+  Draggable
+} from "@hello-pangea/dnd";
 
 function App() {
   const [input, setInput] = useState("");
-  const [trackedStocks, setTrackedStocks] = useState([]);
-  const [stockDataMap, setStockDataMap] = useState({});
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Initialize rows: you can rename or add more
+  const [rows, setRows] = useState({
+    watchlist: [],
+    favorites: []
+  });
+
+  const [stockDataMap, setStockDataMap] = useState({});
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
   const addStock = async () => {
     const symbol = input.toUpperCase();
-    if (!symbol || trackedStocks.includes(symbol)) return;
+    if (!symbol) return;
+
+    const alreadyTracked = Object.values(rows).flat().includes(symbol);
+    if (alreadyTracked) return;
 
     try {
       const res = await fetch(`http://localhost:5000/api/stocks/${symbol}`);
@@ -27,8 +39,11 @@ function App() {
         return;
       }
 
-      setTrackedStocks([...trackedStocks, symbol]);
       setStockDataMap(prev => ({ ...prev, [symbol]: json.data }));
+      setRows(prev => ({
+        ...prev,
+        watchlist: [...prev.watchlist, symbol]
+      }));
     } catch (err) {
       alert("Failed to fetch stock data.");
     }
@@ -37,27 +52,53 @@ function App() {
   };
 
   const removeStock = (symbol) => {
-    setTrackedStocks(trackedStocks.filter(s => s !== symbol));
+    const newRows = {};
+    for (const row in rows) {
+      newRows[row] = rows[row].filter(s => s !== symbol);
+    }
+    setRows(newRows);
     const newMap = { ...stockDataMap };
     delete newMap[symbol];
     setStockDataMap(newMap);
   };
 
-  // Merge all stock data by date
-  const mergedData = (() => {
-    const dates = new Set();
-    trackedStocks.forEach(s => stockDataMap[s]?.forEach(d => dates.add(d.date)));
+  const onDragEnd = (result) => {
+    const { source, destination } = result;
 
-    const sortedDates = Array.from(dates).sort();
-    return sortedDates.map(date => {
-      const entry = { date };
-      trackedStocks.forEach(s => {
-        const match = stockDataMap[s]?.find(d => d.date === date);
-        if (match) entry[s] = match.price;
-      });
-      return entry;
-    });
-  })();
+    if (!destination) return;
+
+    // If dropped in the same place, do nothing
+    if (
+      source.droppableId === destination.droppableId &&
+      source.index === destination.index
+    ) {
+      return;
+    }
+
+    // Dragging within the same list
+    if (source.droppableId === destination.droppableId) {
+      const list = Array.from(rows[source.droppableId]);
+      const [movedItem] = list.splice(source.index, 1);
+      list.splice(destination.index, 0, movedItem);
+
+      setRows(prev => ({
+        ...prev,
+        [source.droppableId]: list
+      }));
+    } else {
+      // Dragging between different lists
+      const sourceList = Array.from(rows[source.droppableId]);
+      const destList = Array.from(rows[destination.droppableId]);
+      const [movedItem] = sourceList.splice(source.index, 1);
+      destList.splice(destination.index, 0, movedItem);
+
+      setRows(prev => ({
+        ...prev,
+        [source.droppableId]: sourceList,
+        [destination.droppableId]: destList
+      }));
+    }
+  };
 
   return (
     <div className="App">
@@ -65,35 +106,40 @@ function App() {
       <Sidebar isOpen={sidebarOpen} />
       <main className="content">
         <div className="input-group">
-          <input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Enter Ticker (e.g., AAPL)" />
+          <input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Enter Ticker (e.g., AAPL)"
+          />
           <button onClick={addStock}>Add Stock</button>
         </div>
-        <ul>
-          {trackedStocks.map(s => (
-            <li key={s}>
-              {s} <button onClick={() => removeStock(s)}>Remove</button>
-            </li>
+
+        <DragDropContext onDragEnd={onDragEnd}>
+          {Object.entries(rows).map(([rowId, stockList]) => (
+            <section key={rowId}>
+              <h2>{rowId.charAt(0).toUpperCase() + rowId.slice(1)}</h2>
+              <Droppable droppableId={rowId} direction="horizontal">
+                {(provided) => (
+                  <div
+                    className="dashboard-row"
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                  >
+                    {stockList.map((symbol, index) => (
+                      <StockCapsule
+                        key={symbol}
+                        symbol={symbol}
+                        index={index}
+                        onRemove={removeStock}
+                      />
+                    ))}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </section>
           ))}
-        </ul>
-        {mergedData.length > 0 && (
-          <ResponsiveContainer width="100%" height={400}>
-            <LineChart data={mergedData}>
-              <XAxis dataKey="date" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              {trackedStocks.map(symbol => (
-                <Line
-                  key={symbol}
-                  type="monotone"
-                  dataKey={symbol}
-                  stroke={`#${Math.floor(Math.random()*16777215).toString(16)}`}
-                  dot={false}
-                />
-              ))}
-            </LineChart>
-          </ResponsiveContainer>
-        )}
+        </DragDropContext>
       </main>
     </div>
   );
