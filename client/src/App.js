@@ -19,6 +19,8 @@ function App() {
     favorites: []
   });
 
+  const [selectedSymbol, setSelectedSymbol] = useState(null);
+
   const [stockDataMap, setStockDataMap] = useState({});
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
@@ -131,6 +133,8 @@ function App() {
                         symbol={symbol}
                         index={index}
                         onRemove={removeStock}
+                        onSelect={() => setSelectedSymbol(symbol)}
+                        data={stockDataMap[symbol]} // Pass stock data
                       />
                     ))}
                     {provided.placeholder}
@@ -140,6 +144,28 @@ function App() {
             </section>
           ))}
         </DragDropContext>
+
+        {selectedSymbol && stockDataMap[selectedSymbol] && (
+          <div style={{ marginTop: "2rem" }}>
+            <h3>{selectedSymbol} - Recent Prices</h3>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr>
+                  <th style={{ border: "1px solid #ccc", padding: "8px" }}>Date</th>
+                  <th style={{ border: "1px solid #ccc", padding: "8px" }}>Price</th>
+                </tr>
+              </thead>
+              <tbody>
+                {stockDataMap[selectedSymbol].map((entry, i) => (
+                  <tr key={i}>
+                    <td style={{ border: "1px solid #ccc", padding: "8px" }}>{entry.date}</td>
+                    <td style={{ border: "1px solid #ccc", padding: "8px" }}>${entry.price.toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </main>
     </div>
   );

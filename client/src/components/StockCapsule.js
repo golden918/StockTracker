@@ -3,7 +3,7 @@ import React from "react";
 import { Draggable } from "@hello-pangea/dnd";
 import "./StockCapsule.css";
 
-export default function StockCapsule({ symbol, index, onRemove }) {
+export default function StockCapsule({ symbol, index, onRemove, onSelect, data }) {
   return (
     <Draggable draggableId={symbol} index={index}>
       {(provided) => (
@@ -12,12 +12,35 @@ export default function StockCapsule({ symbol, index, onRemove }) {
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
+          onClick={onSelect}
         >
           <div className="capsule-header">
             <span>{symbol}</span>
-            <button onClick={() => onRemove(symbol)}>×</button>
+            <button onClick={(e) => {
+              e.stopPropagation(); // Prevent table select on remove
+              onRemove(symbol);
+            }}>×</button>
           </div>
-          {/* Add more stock info here like price or chart preview */}
+          {data ? (
+            <table className="stock-data-table">
+              <tbody>
+                <tr>
+                <td>Price:</td>
+                <td>{data[data.length - 1]?.price?.toFixed(2) ?? "N/A"}</td>
+                </tr>
+                <tr>
+                <td>Change:</td>
+                <td>
+                    {data.length >= 2
+                    ? (data[data.length - 1].price - data[data.length - 2].price).toFixed(2)
+                    : "N/A"}
+                </td>
+                </tr>
+              </tbody>
+            </table>
+          ) : (
+            <div>Loading...</div>
+          )}
         </div>
       )}
     </Draggable>
