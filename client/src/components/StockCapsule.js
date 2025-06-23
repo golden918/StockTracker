@@ -32,7 +32,12 @@ export default function StockCapsule({ symbol, index, onRemove, onSelect, data }
                 <td>Change:</td>
                 <td>
                     {data.length >= 2
-                    ? (data[data.length - 1].price - data[data.length - 2].price).toFixed(2)
+                    ? (() => {
+                        const change = data[data.length - 1].price - data[0].price;
+                        const isPositive = change >= 0;
+                        const sign = isPositive ? "+" : "-";
+                        return `${sign}$${Math.abs(change).toFixed(2)}`;
+                      })()
                     : "N/A"}
                 </td>
                 </tr>
