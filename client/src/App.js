@@ -1,12 +1,11 @@
 import React, { useState } from "react";
 import Header from "./components/Header";
-import Sidebar from "./components/Sidebar";
 import StockCapsule from "./components/StockCapsule";
+import StockOhlcChart from "./components/StockOhlcChart";
 import "./App.css";
 import {
   DragDropContext,
   Droppable,
-  Draggable
 } from "@hello-pangea/dnd";
 
 function App() {
@@ -15,8 +14,7 @@ function App() {
 
   // Initialize rows: you can rename or add more
   const [rows, setRows] = useState({
-    watchlist: [],
-    favorites: []
+    watchlist: []
   });
 
   const [selectedSymbol, setSelectedSymbol] = useState(null);
@@ -105,7 +103,6 @@ function App() {
   return (
     <div className="App">
       <Header onToggleSidebar={toggleSidebar} />
-      <Sidebar isOpen={sidebarOpen} />
       <main className="content">
         <div className="input-group">
           <input
@@ -146,26 +143,11 @@ function App() {
         </DragDropContext>
 
         {selectedSymbol && stockDataMap[selectedSymbol] && (
-          <div style={{ marginTop: "2rem" }}>
-            <h3>{selectedSymbol} - Recent Prices</h3>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr>
-                  <th style={{ border: "1px solid #ccc", padding: "8px" }}>Date</th>
-                  <th style={{ border: "1px solid #ccc", padding: "8px" }}>Price</th>
-                </tr>
-              </thead>
-              <tbody>
-                {stockDataMap[selectedSymbol].map((entry, i) => (
-                  <tr key={i}>
-                    <td style={{ border: "1px solid #ccc", padding: "8px" }}>{entry.date}</td>
-                    <td style={{ border: "1px solid #ccc", padding: "8px" }}>${entry.price.toFixed(2)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <StockOhlcChart
+          data={stockDataMap[selectedSymbol]}
+          symbol={selectedSymbol}
+        />
+      )}
       </main>
     </div>
   );

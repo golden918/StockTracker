@@ -26,16 +26,18 @@ export default function StockCapsule({ symbol, index, onRemove, onSelect, data }
               <tbody>
                 <tr>
                 <td>Price:</td>
-                <td>{data[data.length - 1]?.price?.toFixed(2) ?? "N/A"}</td>
+                <td>{data[data.length - 1]?.close?.toFixed(2) ?? "N/A"}</td>
                 </tr>
                 <tr>
                 <td>Change:</td>
                 <td>
-                    {data.length >= 2
+                  {data.length >= 2
                     ? (() => {
-                        const change = data[data.length - 1].price - data[0].price;
-                        const isPositive = change >= 0;
-                        const sign = isPositive ? "+" : "-";
+                        const newest = parseFloat(data[data.length - 1].close);
+                        const oldest = parseFloat(data[0].close);
+                        if (isNaN(newest) || isNaN(oldest)) return "N/A";
+                        const change = newest - oldest;
+                        const sign = change >= 0 ? "+" : "-";
                         return `${sign}$${Math.abs(change).toFixed(2)}`;
                       })()
                     : "N/A"}
